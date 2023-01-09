@@ -2,7 +2,6 @@ package pckg;
 
 import java.io.IOException;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.Queue;
 
 import pckg.Proses.processState;
@@ -18,37 +17,8 @@ public class MultiLevelQueue {
 		
 	}
 
-	public void processControl(UserJobQueue userjob,int time) {
-		for(int i=0;i<userjob.firstQueue.size();i++) {
-			Proses p=userjob.firstQueue.get(i);
-			if ((time-p.askiZamani)>=20) {
-				p.state=processState.zamanAşımı;
-				p.process.destroy();
-				p.ProsesDurum(time);
-				userjob.firstQueue.remove(userjob.firstQueue.indexOf(p));
-			} 
-		}
-		for(int i=0;i<userjob.secondQueue.size();i++) {
-			Proses p=userjob.secondQueue.get(i);
-			if ((time-p.askiZamani)>=20) {
-				p.state=processState.zamanAşımı;
-				p.process.destroy();
-				p.ProsesDurum(time);
-				userjob.secondQueue.remove(userjob.secondQueue.indexOf(p));
-			} 
-		}
-		for(int i=0;i<userjob.thirdQueue.size();i++) {
-			Proses p=userjob.thirdQueue.get(i);
-			if((time-p.askiZamani)>=20) {
-				p.state=processState.zamanAşımı;
-				p.process.destroy();
-				p.ProsesDurum(time);
-				userjob.thirdQueue.remove(userjob.thirdQueue.indexOf(p));
-			}
-		}
-	}
 
-	public int RunMultiLevelQueue(UserJobQueue userjobQueue, int time,int fcfsarrival) throws IOException 
+	public int RunMultiLevelQueue(UserJobQueue userjobQueue, int time,int fcfsarrival) throws IOException
 	{
 		Iterator<Proses> iteratorUser1 =userjobQueue.firstQueue.iterator(); // ilk kullanici kuyrugu icin iterator
 		Iterator<Proses> iteratorUser2 =userjobQueue.secondQueue.iterator();
@@ -69,17 +39,16 @@ public class MultiLevelQueue {
 		
 		if(iteratorUser1!=null && firstProses.getArrivalTime()<=time) // eger ilk kullanici kuyrugu bos degilse ilk prosesi bir sn calissin
 		{
-
-				firstProses.state=processState.başladı;
-				firstProses.ProsesDurum(time);
+				firstProses.ProsesRunning(); //Proses builder
+				firstProses.state=processState.Running;
+				firstProses.ProsesDurum();
 				// user1'in kalan zamani azaltilip alt kuyruga gonderilecek.
 				firstProses.updateRemainingTime(); // prosessin kalan zamanini 1 sn azaltsin
 				firstProses.increasePriority();
+				firstProses.ProsesDurum();
 				time++;
-				processControl(userjobQueue, time);
-				
 				boolean atildiMi=false;
-				int sayac=0;
+			
 			
 			if(firstProses.getRemainingTime()!=0)
 			{
@@ -88,51 +57,40 @@ public class MultiLevelQueue {
 					if(proses.getArrivalTime()>=time)
 					{
 						userjobQueue.secondQueue.add(userjobQueue.secondQueue.indexOf(proses),firstProses);
-						firstProses.state=processState.askıda;
-						firstProses.askiZamani=time;
-						firstProses.ProsesDurum(time);
-						sayac++;
+						firstProses.state=processState.Waiting;
+						System.out.println("birincikuyruk kesildi");
 						atildiMi=true;
 						break;
 					}
 				}
 				if(!atildiMi) {
 					userjobQueue.secondQueue.add(firstProses);
-					firstProses.state=processState.askıda;
-					firstProses.askiZamani=time;
-					firstProses.ProsesDurum(time);
+					firstProses.state=processState.Waiting;
+					System.out.println("birincikuyruk kesildi");
 				}
 			}
-			else {
-				firstProses.state=processState.sonlandı;
-				firstProses.ProsesDurum(time);
-				firstProses.process.destroy();
-				//userjobQueue.firstQueue.remove(0);// kuyruktaki ilk prosesi kaldirir.
-			}
 			iteratorUser1.remove();
-
+			//userjobQueue.firstQueue.remove(0);// kuyruktaki ilk prosesi kaldirir.
 			if(time>=fcfsarrival) 
 			{
-					firstProses.state=processState.askıda;
-					firstProses.askiZamani=time;
-					if(sayac==0)firstProses.ProsesDurum(time);
+					System.out.println("birincikuyruk fcfsyle kesildi");
+					firstProses.state=processState.Waiting;
 					return  time;
 			}
-			
 		}
 		else if  (iteratorUser2!=null && secondProses.getArrivalTime()<=time )
 		{
-	
-				secondProses.state=processState.başladı;
-				secondProses.ProsesDurum(time);
+				secondProses.ProsesRunning(); //Proses builder
+				secondProses.state=processState.Running;
+				secondProses.ProsesDurum();
 				// user1'in kalan zamani azaltilip alt kuyruga gonderilecek.
 				secondProses.updateRemainingTime(); // prosessin kalan zamanini 1 sn azaltsin
 				secondProses.increasePriority();
+				secondProses.ProsesDurum();
 				time++;
-				processControl(userjobQueue, time);
 				boolean atildiMi=false;
-				int sayac=0;
 				
+				System.out.println(secondProses.getRemainingTime());
 				if(secondProses.getRemainingTime()!=0)
 				{
 					for(Proses proses :userjobQueue.thirdQueue)
@@ -140,10 +98,8 @@ public class MultiLevelQueue {
 						if(proses.getArrivalTime()>=time)
 						{
 							userjobQueue.thirdQueue.add(userjobQueue.secondQueue.indexOf(proses),secondProses);
-							secondProses.state=processState.askıda;
-							secondProses.askiZamani=time;
-							secondProses.ProsesDurum(time);
-							sayac++;
+							secondProses.state=processState.Waiting;
+							System.out.println("ikinci kuyruk kesildi");
 							atildiMi=true;
 							break;
 						}
@@ -151,62 +107,44 @@ public class MultiLevelQueue {
 					if(!atildiMi) {
 						
 							userjobQueue.thirdQueue.add(secondProses);
-							secondProses.state=processState.askıda;
-							secondProses.askiZamani=time;
-							secondProses.ProsesDurum(time);
+							secondProses.state=processState.Waiting;
+							System.out.println("ikinci kuyruk kesildi");
 						
 					}
 				}
-				else {
-					secondProses.state=processState.sonlandı;
-					secondProses.ProsesDurum(time);
-					secondProses.process.destroy();
-					//userjobQueue.secondQueue.remove(0);// kuyruktaki ilk prosesi kaldirir.
-				}
 				iteratorUser2.remove();
-
+				//userjobQueue.secondQueue.remove(0);// kuyruktaki ilk prosesi kaldirir.
 				if(time>=fcfsarrival)  
 				{
-						secondProses.state=processState.askıda;
-						secondProses.askiZamani=time;
-						if(sayac==0)secondProses.ProsesDurum(time);
 						System.out.println("ikinci kuyruk fcfsyle kesildi");
+						secondProses.state=processState.Waiting;
+					
 					return  time;
 				}
-				
 		}
 		else if (iteratorUser3!=null && thirdProses.getArrivalTime()<=time ) // buradaki prosesler 1 sn calisip kuyrugun sonuna yollanıcak , rr modu
 		{
-
-			thirdProses.state=processState.başladı;
-			thirdProses.ProsesDurum(time);
+			thirdProses.ProsesRunning(); //Proses builder
+			thirdProses.state=processState.Running;
+			thirdProses.ProsesDurum();
 			// user1'in kalan zamani azaltilip alt kuyruga gonderilecek.
 			thirdProses.updateRemainingTime(); // prosessin kalan zamanini 1 sn azaltsin
-			int sayac=0;
+			thirdProses.ProsesDurum();
 			time++;
-			processControl(userjobQueue, time);
-			
 			userjobQueue.thirdQueue.remove(0);
 				if(thirdProses.getRemainingTime()!=0)
 				{
 					
 						userjobQueue.thirdQueue.add(thirdProses);
-						thirdProses.state=processState.askıda;
-						thirdProses.askiZamani=time;
-						thirdProses.ProsesDurum(time);
-						sayac++;
-					
-				}
-				else {
-					thirdProses.state=processState.sonlandı;
-					thirdProses.ProsesDurum(time);
-					thirdProses.process.destroy();
+						thirdProses.state=processState.Waiting;
+						System.out.println("ucuncu kuyruk kesildi");
+
 					
 				}
 				if(time>=fcfsarrival) {
-						thirdProses.state=processState.askıda;
-						thirdProses.askiZamani=time;
-						if(sayac==0)thirdProses.ProsesDurum(time);
+						System.out.println("ucuncu kuyruk fcfsyle kesildi");
+						thirdProses.state=processState.Waiting;
+					
 					return  time;
 				}
 		}

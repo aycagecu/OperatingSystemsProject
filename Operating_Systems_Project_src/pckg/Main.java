@@ -1,9 +1,10 @@
 package pckg;
 
-
 import java.io.File;
-
+import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
 
 public class Main 
 {
@@ -11,9 +12,7 @@ public class Main
 
 	public static void main(String[] args) throws IOException 
 	{
-	
-       // System.out.println(renkler.get(this.arrivalTime +" "+ this.priority +" " + this.burstTime + " " + this.getRemainingTime() + " ");
-		DataReader dataReader=new DataReader(new File(args[0]));
+		DataReader dataReader=new DataReader(new File("data.txt"));
 		JobDispatch jobDispatch=new JobDispatch();
 		UserJobQueue userjob = new UserJobQueue();
 		
@@ -23,6 +22,7 @@ public class Main
 		
 		jobDispatch.scanQueues(userjob); // tum kuyruklar dolasilir ve oncelikleri konsola yazdirilir.
 	
+		
 	
 		//jobDispatch.writeProses();
 	}
